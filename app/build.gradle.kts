@@ -64,6 +64,7 @@ dependencies {
 
   // Allow JUnit 5 parameterized tests
   testImplementation("org.junit.jupiter:junit-jupiter-params:5.8.2")
+
 }
 
 application {

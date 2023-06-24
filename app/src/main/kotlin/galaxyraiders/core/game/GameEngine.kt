@@ -5,6 +5,8 @@ import galaxyraiders.ports.RandomGenerator
 import galaxyraiders.ports.ui.Controller
 import galaxyraiders.ports.ui.Controller.PlayerCommand
 import galaxyraiders.ports.ui.Visualizer
+import java.io.File
+import java.io.FileWriter
 import kotlin.system.measureTimeMillis
 
 const val MILLISECONDS_PER_SECOND: Int = 1000
@@ -35,6 +37,15 @@ class GameEngine(
 
   var playing = true
 
+  var score: Double = 0.0
+
+  fun saveScore() {
+    val file = File("/home/gradle/galaxy-raiders/app/src/main/kotlin/galaxyraiders/core/score/Scoreboard.json")
+    val writer = FileWriter(file)
+    writer.write("Hello World!")
+    writer.close()
+  }
+
   fun execute() {
     while (true) {
       val duration = measureTimeMillis { this.tick() }
@@ -55,6 +66,7 @@ class GameEngine(
     this.processPlayerInput()
     this.updateSpaceObjects()
     this.renderSpaceField()
+    this.saveScore()
   }
 
   fun processPlayerInput() {
@@ -78,10 +90,16 @@ class GameEngine(
 
   fun updateSpaceObjects() {
     if (!this.playing) return
+    this.handleExplosions()
     this.handleCollisions()
+    this.handleMissileAsteroidCollisions()
     this.moveSpaceObjects()
     this.trimSpaceObjects()
     this.generateAsteroids()
+  }
+
+  fun handleExplosions() {
+    this.field.handleExplosions()
   }
 
   fun handleCollisions() {
@@ -91,6 +109,10 @@ class GameEngine(
         first.collideWith(second, GameEngineConfig.coefficientRestitution)
       }
     }
+  }
+
+  fun handleMissileAsteroidCollisions() {
+    this.score += this.field.handleMissileAsteroidCollisions()
   }
 
   fun moveSpaceObjects() {
