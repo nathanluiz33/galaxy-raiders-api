@@ -1,6 +1,6 @@
 package galaxyraiders.core.game
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import galaxyraiders.Config
 import galaxyraiders.ports.RandomGenerator
@@ -12,6 +12,7 @@ import java.io.FileWriter
 import kotlin.system.measureTimeMillis
 
 const val MILLISECONDS_PER_SECOND: Int = 1000
+const val INF: Double = 10000000000.0
 
 object GameEngineConfig {
   private val config = Config(prefix = "GR__CORE__GAME__GAME_ENGINE__")
@@ -26,12 +27,12 @@ object GameEngineConfig {
 }
 
 data class GameState(
-    @JsonProperty("score")
-    var score: Double,
-    @JsonProperty("startTime")
-		var startTime: String,
-    @JsonProperty("endTime")
-		var endTime: String
+  @JsonProperty("score")
+  var score: Double,
+  @JsonProperty("startTime")
+  var startTime: String,
+  @JsonProperty("endTime")
+  var endTime: String
 )
 
 @Suppress("TooManyFunctions")
@@ -51,12 +52,49 @@ class GameEngine(
   var state = GameState(score = 0.0, startTime = "", endTime = "")
 
   fun saveScore() {
+    if (state.startTime == "") state.startTime = getCurrentTimeAsString()
+    state.endTime = getCurrentTimeAsString()
+
     val scoreboard = File("/home/gradle/galaxy-raiders/app/src/main/kotlin/galaxyraiders/core/score/Scoreboard.json")
     val scoreboardWriter = FileWriter(scoreboard)
     val objectMapper = ObjectMapper()
     val json = objectMapper.writeValueAsString(this.state)
-		scoreboardWriter.write(json)
+    scoreboardWriter.write(json)
     scoreboardWriter.close()
+  }
+
+  fun saveLeaderboard() {
+    val leaderboardPath = "/home/gradle/galaxy-raiders/app/src/main/kotlin/galaxyraiders/core/score/Leaderboard.json"
+    val leaderboardJson = getJsonObjectFromFile(leaderboardPath)
+
+    val file = File(leaderboardPath)
+    val jsonContent = file.readText()
+    val jsonArray = JSONArray(jsonContent)
+
+    var mnScore: Double = INF
+    for (i in 0 until leaderboardJson.length()) {
+      val jsonObject = leaderboardJson.getJSONObject(i)
+
+      if (jsonObject.get("startTime") == String(state.startTime)) {
+        jsonArray.put(i, objectMapper.writeValueAsString(this.state))
+        file.writeText(jsonArray.toString())
+        return
+      }
+      if (mnScore > jsonObject.get("score")) {
+        mnScore = jsonObject.get("score")
+      }
+    }
+    if (mnScore < this.startTime.score) {
+      for (i in 0 until leaderboardJson.length()) {
+        val jsonObject = leaderboardJson.getJSONObject(i)
+
+        if (mnScore == jsonObject.get("score")) {
+          jsonArray.put(i, objectMapper.writeValueAsString(this.state))
+          file.writeText(jsonArray.toString())
+          return
+        }
+      }
+    }
   }
 
   fun execute() {
@@ -80,6 +118,7 @@ class GameEngine(
     this.updateSpaceObjects()
     this.renderSpaceField()
     this.saveScore()
+    this.saveLeaderboard()
   }
 
   fun processPlayerInput() {
