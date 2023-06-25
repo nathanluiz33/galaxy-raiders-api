@@ -76,6 +76,7 @@ class GameEngine(
       val jsonObject = leaderboardJson.getJSONObject(i)
 
       if (jsonObject.get("startTime") == String(state.startTime)) {
+        val objectMapper = ObjectMapper()
         jsonArray.put(i, objectMapper.writeValueAsString(this.state))
         file.writeText(jsonArray.toString())
         return
@@ -89,6 +90,7 @@ class GameEngine(
         val jsonObject = leaderboardJson.getJSONObject(i)
 
         if (mnScore == jsonObject.get("score")) {
+          val objectMapper = ObjectMapper()
           jsonArray.put(i, objectMapper.writeValueAsString(this.state))
           file.writeText(jsonArray.toString())
           return
