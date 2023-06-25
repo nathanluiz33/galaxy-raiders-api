@@ -7,7 +7,6 @@ import galaxyraiders.ports.RandomGenerator
 import galaxyraiders.ports.ui.Controller
 import galaxyraiders.ports.ui.Controller.PlayerCommand
 import galaxyraiders.ports.ui.Visualizer
-import org.json.JSONArray
 import java.io.File
 import java.io.FileWriter
 import java.time.LocalTime
@@ -75,33 +74,37 @@ class GameEngine(
   fun saveLeaderboard() {
     val leaderboardPath = "/home/gradle/galaxy-raiders/app/src/main/kotlin/galaxyraiders/core/score/Leaderboard.json"
     // val leaderboardJson = getJsonObjectFromFile(leaderboardPath)
+    val objectMapper = ObjectMapper()
 
     val file = File(leaderboardPath)
-    val jsonContent = file.readText()
-    val jsonArray = JSONArray(jsonContent)
+    // val jsonContent = file.readText()
+    // val jsonArray = JSONArray(jsonContent)
+    val jsonArray: Array<GameState> = objectMapper.readValue(file, Array<GameState>::class.java)
 
     var mnScore: Double = INF
-    for (i in 0 until jsonArray.length()) {
-      val jsonObject = jsonArray.get(i)
+    for (jsonObject in jsonArray) {
+      // val jsonObject = jsonArray.getJSONObject(i)
 
-      if (jsonObject.get("startTime") == state.startTime.toString()) {
-        val objectMapper = ObjectMapper()
-        jsonArray.put(i, objectMapper.writeValueAsString(this.state))
-        file.writeText(jsonArray.toString())
+      if (jsonObject.startTime == state.startTime.toString()) {
+        jsonObject.score = this.state.score
+        jsonObject.startTime = this.state.startTime
+        jsonObject.endTime = this.state.endTime
+        objectMapper.writeValue(file, jsonArray)
         return
       }
-      if (mnScore > jsonObject.get("score")) {
-        mnScore = jsonObject.get("score")
+      if (mnScore > jsonObject.score) {
+        mnScore = jsonObject.score
       }
     }
     if (mnScore < this.state.score) {
-      for (i in 0 until jsonArray.length()) {
-        val jsonObject = jsonArray.get(i)
+      for (jsonObject in jsonArray) {
+        // val jsonObject = jsonArray.getJSONObject(i)
 
-        if (mnScore == jsonObject.get("score")) {
-          val objectMapper = ObjectMapper()
-          jsonArray.put(i, objectMapper.writeValueAsString(this.state))
-          file.writeText(jsonArray.toString())
+        if (mnScore == jsonObject.score) {
+          jsonObject.score = this.state.score
+          jsonObject.startTime = this.state.startTime
+          jsonObject.endTime = this.state.endTime
+          objectMapper.writeValue(file, jsonArray)
           return
         }
       }
