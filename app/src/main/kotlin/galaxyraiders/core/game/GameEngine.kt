@@ -7,8 +7,11 @@ import galaxyraiders.ports.RandomGenerator
 import galaxyraiders.ports.ui.Controller
 import galaxyraiders.ports.ui.Controller.PlayerCommand
 import galaxyraiders.ports.ui.Visualizer
+import org.json.JSONArray
 import java.io.File
 import java.io.FileWriter
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import kotlin.system.measureTimeMillis
 
 const val MILLISECONDS_PER_SECOND: Int = 1000
@@ -51,6 +54,12 @@ class GameEngine(
 
   var state = GameState(score = 0.0, startTime = "", endTime = "")
 
+  fun getCurrentTimeAsString(): String {
+    val currentTime = LocalTime.now()
+    val formatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+    return currentTime.format(formatter)
+  }
+
   fun saveScore() {
     if (state.startTime == "") state.startTime = getCurrentTimeAsString()
     state.endTime = getCurrentTimeAsString()
@@ -65,17 +74,17 @@ class GameEngine(
 
   fun saveLeaderboard() {
     val leaderboardPath = "/home/gradle/galaxy-raiders/app/src/main/kotlin/galaxyraiders/core/score/Leaderboard.json"
-    val leaderboardJson = getJsonObjectFromFile(leaderboardPath)
+    // val leaderboardJson = getJsonObjectFromFile(leaderboardPath)
 
     val file = File(leaderboardPath)
     val jsonContent = file.readText()
     val jsonArray = JSONArray(jsonContent)
 
     var mnScore: Double = INF
-    for (i in 0 until leaderboardJson.length()) {
-      val jsonObject = leaderboardJson.getJSONObject(i)
+    for (i in 0 until jsonArray.length()) {
+      val jsonObject = jsonArray.get(i)
 
-      if (jsonObject.get("startTime") == String(state.startTime)) {
+      if (jsonObject.get("startTime") == state.startTime.toString()) {
         val objectMapper = ObjectMapper()
         jsonArray.put(i, objectMapper.writeValueAsString(this.state))
         file.writeText(jsonArray.toString())
@@ -85,9 +94,9 @@ class GameEngine(
         mnScore = jsonObject.get("score")
       }
     }
-    if (mnScore < this.startTime.score) {
-      for (i in 0 until leaderboardJson.length()) {
-        val jsonObject = leaderboardJson.getJSONObject(i)
+    if (mnScore < this.state.score) {
+      for (i in 0 until jsonArray.length()) {
+        val jsonObject = jsonArray.get(i)
 
         if (mnScore == jsonObject.get("score")) {
           val objectMapper = ObjectMapper()
