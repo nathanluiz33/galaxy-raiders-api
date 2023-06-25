@@ -1,5 +1,7 @@
 package galaxyraiders.core.game
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper
 import galaxyraiders.Config
 import galaxyraiders.ports.RandomGenerator
 import galaxyraiders.ports.ui.Controller
@@ -23,6 +25,15 @@ object GameEngineConfig {
   val msPerFrame: Int = MILLISECONDS_PER_SECOND / this.frameRate
 }
 
+data class GameState(
+    @JsonProperty("score")
+    var score: Double,
+    @JsonProperty("startTime")
+		var startTime: String,
+    @JsonProperty("endTime")
+		var endTime: String
+)
+
 @Suppress("TooManyFunctions")
 class GameEngine(
   val generator: RandomGenerator,
@@ -37,13 +48,15 @@ class GameEngine(
 
   var playing = true
 
-  var score: Double = 0.0
+  var state = GameState(score = 0.0, startTime = "", endTime = "")
 
   fun saveScore() {
-    val file = File("/home/gradle/galaxy-raiders/app/src/main/kotlin/galaxyraiders/core/score/Scoreboard.json")
-    val writer = FileWriter(file)
-    writer.write("Hello World!")
-    writer.close()
+    val scoreboard = File("/home/gradle/galaxy-raiders/app/src/main/kotlin/galaxyraiders/core/score/Scoreboard.json")
+    val scoreboardWriter = FileWriter(scoreboard)
+    val objectMapper = ObjectMapper()
+    val json = objectMapper.writeValueAsString(this.state)
+		scoreboardWriter.write(json)
+    scoreboardWriter.close()
   }
 
   fun execute() {
@@ -112,7 +125,7 @@ class GameEngine(
   }
 
   fun handleMissileAsteroidCollisions() {
-    this.score += this.field.handleMissileAsteroidCollisions()
+    this.state.score += this.field.handleMissileAsteroidCollisions()
   }
 
   fun moveSpaceObjects() {
